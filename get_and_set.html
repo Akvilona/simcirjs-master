@@ -1,42 +1,54 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
     <script
       src="https://code.jquery.com/jquery-3.2.1.min.js"
       integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-      crossorigin="anonymous"></script>
+      crossorigin="anonymous"
+    ></script>
     <script type="text/javascript" src="simcir.js"></script>
     <link rel="stylesheet" type="text/css" href="simcir.css" />
-    <script type="text/javascript" src="simcir-basicset.js"></script>
+    <!-- <script type="text/javascript" src="simcir-basicset.js"></script>
     <link rel="stylesheet" type="text/css" href="simcir-basicset.css" />
-    <script type="text/javascript" src="simcir-library.js"></script>
+    <script type="text/javascript" src="simcir-library.js"></script> -->
     <script type="text/javascript">
-$(function() {
+      $(function () {
+        var $s = simcir;
 
-  var $s = simcir;
+        var $simcir = $("#mySimcir");
 
-  var $simcir = $('#mySimcir');
+        var getCircuitData = function () {
+          // получение данных по кнопке 'v get data v'
+          return $s.controller($simcir.find(".simcir-workspace")).text();
+        };
+        var setCircuitData = function (data) {
+          // Загрузка вызов функции setupSimcir() в файле sincir.js
+          console.log(data);
+          // JSON (JavaScript Object Notation) – это общий формат для представления значений и объектов.
+          // JavaScript предоставляет методы:
+          // JSON.stringify для преобразования объектов в JSON.
+          // JSON.parse для преобразования JSON обратно в объект.
+          var par = JSON.parse(data);
+          //console.log(par);
+          $s.setupSimcir($simcir, par);
+        };
 
-  var getCircuitData = function() {
-    return $s.controller(
-        $simcir.find('.simcir-workspace') ).text();
-  };
-  var setCircuitData = function(data) {
-    $s.setupSimcir($simcir, JSON.parse(data) );
-  };
+        // button click events
+        $("#getDataBtn").click(function () {
+          // получение данных по кнопке 'v get data v'
+          $("#dataArea").val(getCircuitData());
+        });
 
-  // button click events
-  $('#getDataBtn').click(function() {
-    $('#dataArea').val(getCircuitData() );
-  });
-  $('#setDataBtn').click(function() {
-    setCircuitData($('#dataArea').val() );
-  });
+        $("#setDataBtn").click(function () {
+          // загрузка данных по кнопке '^ set data ^'
+          setCircuitData($("#dataArea").val());
+        });
 
-  // load default (just specifies circuit size).
-  setCircuitData('{ "width":600, "height":200 }');
-});
+        // load default (just specifies circuit size).
+        // загрузка пустого окна данных
+        setCircuitData('{ "width":600, "height":200 }');
+      });
     </script>
     <title></title>
   </head>
@@ -46,6 +58,6 @@ $(function() {
       <button id="getDataBtn">v get data v</button>
       <button id="setDataBtn">^ set data ^</button>
     </div>
-    <textarea id="dataArea" style="width:600px; height:200px;"></textarea>
+    <textarea id="dataArea" style="width: 600px; height: 200px"></textarea>
   </body>
 </html>
