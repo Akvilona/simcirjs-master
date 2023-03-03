@@ -30,12 +30,16 @@ simcir.$ = (function () {
   var cacheIdSeq = 0;
   var cache = {};
 
+  // возвращает объект со всеми функциями в __proto__
+  // пришли сюда из функции getData()
   var getCache = function (elm) {
+    // получили ID кэша, это число
     var cacheId = elm[cacheIdKey];
     if (typeof cacheId == "undefined") {
       elm[cacheIdKey] = cacheId = cacheIdSeq++;
       cache[cacheId] = debug ? { e: elm } : {};
     }
+    // возвращаем кэш
     return cache[cacheId];
   };
 
@@ -64,7 +68,7 @@ simcir.$ = (function () {
 
   var removeCache = function (elm) {
     if (typeof elm[cacheIdKey] != "undefined") {
-      // remove all listeners
+      // remove all listeners  удалить всех слушателей
       var cacheId = elm[cacheIdKey];
       var listenerMap = cache[cacheId].listenerMap;
       for (var type in listenerMap) {
@@ -84,7 +88,7 @@ simcir.$ = (function () {
       elm.removeChild(elm.firstChild);
     }
   };
-
+  // пришли сюда из функции data()
   var getData = function (elm) {
     if (!getCache(elm).data) {
       getCache(elm).data = {};
@@ -164,8 +168,10 @@ simcir.$ = (function () {
     }
   };
 
+  // elm =  объект <g class=... строка состоящая из всех элементов
   var data = function (elm, kv) {
     if (arguments.length == 2) {
+      // elm =  объект <g class=... строка состоящая из всех элементов и идем в getData()
       if (typeof kv == "string") return getData(elm)[kv];
       for (var k in kv) {
         getData(elm)[k] = kv[k];
@@ -183,6 +189,9 @@ simcir.$ = (function () {
     return o1;
   };
 
+  // эта функция с callback () которая вызывает вложенную функцию
+  // это callback -> ее второй аргумент (функция или массив) с двумя параметрами
+  // которые описаны в месте вызова самого $.each()
   var each = function (it, callback) {
     if (typeof it.splice == "function") {
       for (var i = 0; i < it.length; i += 1) {
@@ -220,9 +229,10 @@ simcir.$ = (function () {
     }
     elm.setAttribute("class", newClasses);
   };
-
+  // функция проверяет, что в (массиве классов) есть указанный атрибут например 'class' или 'simcir-device' и возвращает true / false
   var hasClass = function (elm, className) {
     var classes = (elm.getAttribute("class") || "").split(/\s+/g);
+    // classes = ['simcir-device'] - массив из одного элемента
     for (var i = 0; i < classes.length; i += 1) {
       if (classes[i] == className) {
         return true;
@@ -235,14 +245,17 @@ simcir.$ = (function () {
     if (elm.nodeType != 1) {
       return false;
     } else if (!selector) {
+      // selector = '.simcir-device'
       return true;
     }
     var sels = selector.split(/[,\s]+/g);
+    // sels = ['.simcir-device'], selector = '.simcir-device'
     for (var i = 0; i < sels.length; i += 1) {
       var sel = sels[i];
       if (sel.substring(0, 1) == "#") {
         throw "not supported:" + sel;
       } else if (sel.substring(0, 1) == ".") {
+        // проверяем что есть атрибут 'class'
         if (hasClass(elm, sel.substring(1))) {
           return true;
         }
@@ -257,6 +270,7 @@ simcir.$ = (function () {
 
   var parser = new window.DOMParser();
 
+  // Поиск и удаление всех вложенных объектов в указанный объект
   var html = function (html) {
     var doc = parser.parseFromString(
       '<div xmlns="http://www.w3.org/1999/xhtml">' + html + "</div>",
@@ -271,6 +285,7 @@ simcir.$ = (function () {
     return elms;
   };
 
+  // преобразует строку пикселей в число. Пример: '120px' -> '120'
   var pxToNum = function (px) {
     if (
       typeof px != "string" ||
@@ -283,6 +298,7 @@ simcir.$ = (function () {
     return +px.substring(0, px.length - 2);
   };
 
+  // построить запрос
   var buildQuery = function (data) {
     var query = "";
     for (var k in data) {
@@ -394,8 +410,11 @@ simcir.$ = (function () {
     return $;
   };
 
-  // 1. for single element
+  // 1. for single element ФУНКЦИИ для одного элемента
+  // fn это класс содержащий все функции для одного элемента,
+  // который присваиваются в операторе elms.__proto__ = fn;
   var fn = {
+    // получаем или устанавливает значение атрибута
     attr: function (kv) {
       if (arguments.length == 1) {
         if (typeof kv == "string") return this.getAttribute(kv);
@@ -407,6 +426,8 @@ simcir.$ = (function () {
       }
       return this;
     },
+
+    // в этом файле функция не вызывается
     prop: function (kv) {
       if (arguments.length == 1) {
         if (typeof kv == "string") return this[kv];
@@ -418,6 +439,7 @@ simcir.$ = (function () {
       }
       return this;
     },
+    // функция получает или устанавливает css style элемента
     css: function (kv) {
       if (arguments.length == 1) {
         if (typeof kv == "string") return this.style[kv];
@@ -445,7 +467,9 @@ simcir.$ = (function () {
       return this;
     },
     on: function (type, listener) {
+      // делим элементы по пробелам
       var types = type.split(/\s+/g);
+
       for (var i = 0; i < types.length; i += 1) {
         this.addEventListener(types[i], listener);
         addEventListener(this, types[i], listener, true);
@@ -529,7 +553,7 @@ simcir.$ = (function () {
       if (this.parentNode) {
         this.parentNode.removeChild(this);
       }
-      removeCache(this);
+      removeCache(this); // удалить всех слушателей
       return this;
     },
     detach: function () {
@@ -549,24 +573,33 @@ simcir.$ = (function () {
       }
       return $();
     },
+
+    // получаем список всех элементов из указанного класса например simcir-body
     find: function (selector) {
       var elms = [];
       var childNodes = this.querySelectorAll(selector);
+      // переносим все элементы из объекта childNodes в массив elms[]
       for (var i = 0; i < childNodes.length; i += 1) {
         elms.push(childNodes.item(i));
       }
+
       elms.__proto__ = fn;
+
       return elms;
     },
+    // функция создает массив elms[] объектов рабочего поля
     children: function (selector) {
       var elms = [];
       var childNodes = this.childNodes;
+      // сохраняем объекты рабочего поля в массив elms = [];
       for (var i = 0; i < childNodes.length; i += 1) {
         if (matches(childNodes.item(i), selector)) {
+          // добавляем элемент -> (класс) в массив
           elms.push(childNodes.item(i));
         }
       }
       elms.__proto__ = fn;
+      // возвращаем список элементов->{классов} со всеми функциями в __proto__
       return elms;
     },
     index: function (selector) {
@@ -683,18 +716,28 @@ simcir.$ = (function () {
     },
   };
 
-  // 2. to array
+  // 2. to array возвращаем массив элементов с набором всех функций в .__proto__
+  // вызывается из $devicePane.children(".simcir-device").each(function () {
   each(fn, function (name, func) {
+    // fn - это набор функций для каждого объекта, которые лежат в ret.__proto__ == fn
     fn[name] = function () {
       var newRet = null;
+      // если окно еще не сформировалось то this.length = 0
       for (var i = 0; i < this.length; i += 1) {
+        // иначе elm это один из объектов на рабочем поле
         var elm = this[i];
+        // apply() ->fn.attr() -> getAttribute(kv)
+        // arguments - каким то образом стал массивом: Arguments ['simcir-transform-rotate', callee: (...), Symbol(Symbol.iterator): ƒ]
         var ret = func.apply(elm, arguments);
+        //  ret = массиву объектов рабочего поля
         if (elm !== ret) {
           if (ret != null && ret.__proto__ == fn) {
             if (newRet == null) {
+              // если окно еще не сформировалось при старте программы
+              // но и при сохранение данных из рабочей области
               newRet = [];
             }
+            // concat - объединяет два массива newRet и ret и возвращает общий массив
             newRet = newRet.concat(ret);
           } else {
             return ret;
@@ -702,6 +745,8 @@ simcir.$ = (function () {
         }
       }
       if (newRet != null) {
+        // окно еще не сформировалось
+        // добавляем все функции (а все старые удаляются)
         newRet.__proto__ = fn;
         return newRet;
       }
@@ -713,6 +758,11 @@ simcir.$ = (function () {
   fn = extend(fn, {
     each: function (callback) {
       for (var i = 0; i < this.length; i += 1) {
+        // С помощью call(..) вы можете написать метод один раз, а затем
+        // наследовать его в других объектах, без необходимости
+        // переписывать метод для каждого нового объекта.
+        // что и делается в функции $ - 747 строка
+        // {attr: ƒ, prop: ƒ, css: ƒ, data: ƒ, val: ƒ, …}
         callback.call(this[i], i);
       }
       return this;
@@ -725,6 +775,8 @@ simcir.$ = (function () {
     },
   });
 
+  // самая короткая по названию функция
+  // присваивает объекту __proto__ все функции этого js файла
   var $ = function (target) {
     if (typeof target == "function") {
       // ready
@@ -740,6 +792,7 @@ simcir.$ = (function () {
         for (var i = 0; i < childNodes.length; i += 1) {
           elms.push(childNodes.item(i));
         }
+        // добавляем все функции (а все старые удаляются)
         elms.__proto__ = fn;
         return elms;
       }
@@ -747,8 +800,12 @@ simcir.$ = (function () {
       if (target.__proto__ == fn) {
         return target;
       } else {
+        // создаем массив входных и выходных соединений (белые и желтые кружечки)
         var elms = [];
+        // target это строка содержащая тег желтого кружочка
+        // или может содержать целый объект
         elms.push(target);
+        // добавляем все функции (а все старые удаляются)
         elms.__proto__ = fn;
         return elms;
       }
@@ -771,6 +828,7 @@ simcir.$ = (function () {
 
 !(function ($s) {
   var $ = $s.$;
+  var $idObject = 0; // идентификатор объекта
 
   var createSVGElement = function (tagName) {
     return $(document.createElementNS("http://www.w3.org/2000/svg", tagName));
@@ -827,7 +885,8 @@ simcir.$ = (function () {
       drawCircle: drawCircle,
     };
   };
-
+  // функция возвращает координаты объекта
+  // (но как происходит вызов этой функции мне пока непонятно) надеюсь стереть этот комментарий
   var transform = (function () {
     var attrX = "simcir-transform-x";
     var attrY = "simcir-transform-y";
@@ -880,11 +939,13 @@ simcir.$ = (function () {
       };
     }).css("-webkit-user-select", "none");
   };
-
+  // вызов по кнопке 'v get data v'
   var controller = (function () {
     var id = "controller";
     return function ($ui, controller) {
+      // вызов функции controller($dev) с одним объектом
       if (arguments.length == 1) {
+        // вызываем функцию data() -> GetData() -> getCache() -> cache()
         return $.data($ui[0], id);
       } else if (arguments.length == 2) {
         $.data($ui[0], id, controller);
@@ -902,6 +963,8 @@ simcir.$ = (function () {
       }
       _queue.push(event);
     };
+
+    // Событие отправки
     var dispatchEvent = function () {
       var queue = _queue;
       _queue = null;
@@ -929,8 +992,8 @@ simcir.$ = (function () {
     };
   })();
 
-  var unit = 16;
-  var fontSize = 12;
+  var unit = 16; // размер шага сетки в поле и размер объектов
+  var fontSize = 12; // размер шрифта
 
   var createLabel = function (text) {
     return createSVGElement("text")
@@ -950,6 +1013,7 @@ simcir.$ = (function () {
       description: description,
       headless: headless,
     });
+
     if (type == "in") {
       controller($node, createInputNodeController(node));
     } else if (type == "out") {
@@ -1040,6 +1104,7 @@ simcir.$ = (function () {
     });
   };
 
+  // создать контроллер входного узла
   var createInputNodeController = function (node) {
     var output = null;
     var setOutput = function (outNode) {
@@ -1054,6 +1119,7 @@ simcir.$ = (function () {
     });
   };
 
+  //создать контроллер выходного узла
   var createOutputNodeController = function (node) {
     var inputs = [];
     var super_setValue = node.setValue;
@@ -1063,14 +1129,18 @@ simcir.$ = (function () {
         inputs[i].setValue(value);
       }
     };
+    // создаем соединение линии между входом и выходом
     var connectTo = function (inNode) {
+      // проверяем на то что входящий порт занят
       if (inNode.getOutput() != null) {
+        // если входящий порт занят, то удаляем соединение (желтого кружочка)
         inNode.getOutput().disconnectFrom(inNode);
       }
       inNode.setOutput(node);
       inputs.push(inNode);
       inNode.setValue(node.getValue(), true);
     };
+    // удаляем соединение
     var disconnectFrom = function (inNode) {
       if (inNode.getOutput() != node) {
         throw "not connected.";
@@ -1098,6 +1168,8 @@ simcir.$ = (function () {
     var $dev = createSVGElement("g");
     if (!headless) {
       $dev.attr("class", "simcir-device");
+      //      $idObject++;
+      //      $dev.attr("id", $idObject);
     }
     controller(
       $dev,
@@ -1122,33 +1194,51 @@ simcir.$ = (function () {
   var createDeviceController = function (device) {
     var inputs = [];
     var outputs = [];
+
     var addInput = function (label, description) {
+      //////////////////////////////////////////////////////////////////////////
+      // createSVGElement("g"); createNodeController();
+      // createInputNodeController(node) или createOutputNodeController(node))
       var $node = createNode("in", label, description, device.headless);
+
+      // добавляем событие которое срабатывает если кликнуть по желтому кружочку
       $node.on("nodeValueChange", function (event) {
         device.$ui.trigger("inputValueChange");
       });
       if (!device.headless) {
         device.$ui.append($node);
       }
+
       var node = controller($node);
       inputs.push(node);
       return node;
     };
+
     var addOutput = function (label, description) {
+      //////////////////////////////////////////////////////////////////////////
+      // createSVGElement("g"); createNodeController();
+      // createInputNodeController(node) или createOutputNodeController(node))
       var $node = createNode("out", label, description, device.headless);
+
       if (!device.headless) {
         device.$ui.append($node);
       }
+
       var node = controller($node);
       outputs.push(node);
       return node;
     };
+
+    // getInputs() возвращает массив объектов входящих источников (желтый кружочек)
     var getInputs = function () {
       return inputs;
     };
+
+    // getInputs() возвращает массив объектов исходящих источников (белый кружочек)
     var getOutputs = function () {
       return outputs;
     };
+
     var disconnectAll = function () {
       $.each(getInputs(), function (i, inNode) {
         var outNode = inNode.getOutput();
@@ -1156,23 +1246,29 @@ simcir.$ = (function () {
           outNode.disconnectFrom(inNode);
         }
       });
+
       $.each(getOutputs(), function (i, outNode) {
         $.each(outNode.getInputs(), function (i, inNode) {
           outNode.disconnectFrom(inNode);
         });
       });
     };
+
+    // удаление объекта со всеми входами и выходами
     device.$ui.on("dispose", function () {
       $.each(getInputs(), function (i, inNode) {
         inNode.$ui.remove();
       });
+
       $.each(getOutputs(), function (i, outNode) {
         outNode.$ui.remove();
       });
+
       device.$ui.remove();
     });
 
     var selected = false;
+    // Установленный выбор
     var setSelected = function (value) {
       selected = value;
       device.$ui.trigger("deviceSelect");
@@ -1186,27 +1282,30 @@ simcir.$ = (function () {
     if (typeof label == "undefined") {
       label = defaultLabel;
     }
+    // Установить метку
     var setLabel = function (value) {
       value = value.replace(/^\s+|\s+$/g, "");
       label = value || defaultLabel;
       device.$ui.trigger("deviceLabelChange");
     };
+    // Получить метку
     var getLabel = function () {
       return label;
     };
-
+    // Получить размер
     var getSize = function () {
       var nodes = Math.max(
         device.getInputs().length,
         device.getOutputs().length
       );
       return {
-        // устанавливаем размер объекта
+        // устанавливаем размер девайса
         width: unit * 2,
         height: unit * Math.max(2, device.halfPitch ? (nodes + 1) / 2 : nodes),
       };
     };
 
+    // пользовательский интерфейс макета
     var layoutUI = function () {
       var size = device.getSize();
       var w = size.width;
@@ -1231,6 +1330,7 @@ simcir.$ = (function () {
         .attr({ x: w / 2, y: h + fontSize });
     };
 
+    // создать пользовательский интерфейс
     var createUI = function () {
       device.$ui.attr("class", "simcir-device");
       device.$ui.on("deviceSelect", function () {
@@ -1245,15 +1345,18 @@ simcir.$ = (function () {
         .attr("class", "simcir-device-body")
         .attr("rx", 2)
         .attr("ry", 2);
+
       device.$ui.prepend($body);
 
       var $label = createLabel(label)
         .attr("class", "simcir-device-label")
         .attr("text-anchor", "middle");
+
       device.$ui.on("deviceLabelChange", function () {
         $label.text(getLabel());
       });
 
+      // создание окна с название объекта
       var label_dblClickHandler = function (event) {
         event.preventDefault();
         event.stopPropagation();
@@ -1267,11 +1370,11 @@ simcir.$ = (function () {
           .val($label.text())
           .on("keydown", function (event) {
             if (event.keyCode == 13) {
-              // ENTER
+              // обработка клавиши ENTER
               setLabel($(this).val());
               $dlg.remove();
             } else if (event.keyCode == 27) {
-              // ESC
+              // обработка клавиши ESC
               $dlg.remove();
             }
           });
@@ -1314,20 +1417,23 @@ simcir.$ = (function () {
   var createConnector = function (x1, y1, x2, y2) {
     return createSVGElement("path")
       .attr("d", "M " + x1 + " " + y1 + " L " + x2 + " " + y2)
-      .attr("class", "simcir-connector");
+      .attr("class", "simcir-connector"); //  simcir разъем
   };
 
+  // соединение двух объектов
   var connect = function ($node1, $node2) {
     var type1 = $node1.attr("simcir-node-type");
     var type2 = $node2.attr("simcir-node-type");
+    // проверка что соединяются вход с выходом
     if (type1 == "in" && type2 == "out") {
       controller($node2).connectTo(controller($node1));
+      // или проверка что соединяются выходом со входом
     } else if (type1 == "out" && type2 == "in") {
       controller($node1).connectTo(controller($node2));
     }
   };
 
-  // схема построения
+  // схема построения (схема сборки)
   var buildCircuit = function (data, headless, scope) {
     var $devices = []; // устройства
     var $devMap = {}; // Карта разработки
@@ -1469,8 +1575,10 @@ simcir.$ = (function () {
     return $dlg;
   };
 
+  // создать фабрику ссылок на устройства
   var createDeviceRefFactory = function (data) {
     return function (device) {
+      // Схема сборки
       var $devs = buildCircuit(data, true, {});
       var $ports = [];
       $.each($devs, function (i, $dev) {
@@ -1479,6 +1587,7 @@ simcir.$ = (function () {
           $ports.push($dev);
         }
       });
+
       $ports.sort(function ($p1, $p2) {
         var x1 = controller($p1).deviceDef.x;
         var y1 = controller($p1).deviceDef.y;
@@ -1492,6 +1601,7 @@ simcir.$ = (function () {
       var getDesc = function (port) {
         return port ? port.description : "";
       };
+
       $.each($ports, function (i, $port) {
         var port = controller($port);
         var portDef = port.deviceDef;
@@ -1503,7 +1613,9 @@ simcir.$ = (function () {
             portDef.label,
             getDesc(outPort.getInputs()[0])
           );
+
           // force disconnect test devices that connected to In-port
+          // принудительно отсоедините устройства, подключенные к входному порту
           var inNode = port.getInputs()[0];
           if (inNode.getOutput() != null) {
             inNode.getOutput().disconnectFrom(inNode);
@@ -1515,6 +1627,7 @@ simcir.$ = (function () {
             getDesc(inPort.getOutput())
           );
           // force disconnect test devices that connected to Out-port
+          // принудительно отсоедините устройства, подключенные к выходному порту
           var outNode = port.getOutputs()[0];
           $.each(outNode.getInputs(), function (i, inNode) {
             if (inNode.getOutput() != null) {
@@ -1526,16 +1639,19 @@ simcir.$ = (function () {
           outPort.setValue(inPort.getValue());
         });
       });
+
       var super_getSize = device.getSize;
       device.getSize = function () {
         var size = super_getSize();
         return { width: unit * 4, height: size.height };
       };
+
       device.$ui.on("dispose", function () {
         $.each($devs, function (i, $dev) {
           $dev.trigger("dispose");
         });
       });
+
       device.$ui.on("dblclick", function (event) {
         // open library,
         event.preventDefault();
@@ -1550,7 +1666,7 @@ simcir.$ = (function () {
     };
   };
 
-  // создать пользовательский макет устройства Ref Factory
+  // создать фабрику устройств пользовательского макета
   var createCustomLayoutDeviceRefFactory = function (data) {
     return function (device) {
       // схема построения
@@ -1571,6 +1687,7 @@ simcir.$ = (function () {
         var portDef = port.deviceDef;
         var inPort;
         var outPort;
+
         if (portDef.type == "In") {
           outPort = port.getOutputs()[0];
           inPort = device.addInput();
@@ -1579,7 +1696,9 @@ simcir.$ = (function () {
             label: portDef.label,
             desc: getDesc(outPort.getInputs()[0]),
           });
+
           // force disconnect test devices that connected to In-port
+          // принудительно отсоедините устройства, подключенные к входному порту
           var inNode = port.getInputs()[0];
           if (inNode.getOutput() != null) {
             inNode.getOutput().disconnectFrom(inNode);
@@ -1592,7 +1711,9 @@ simcir.$ = (function () {
             label: portDef.label,
             desc: getDesc(inPort.getOutput()),
           });
+
           // force disconnect test devices that connected to Out-port
+          //принудительно отключите устройства, подключенные к выходному порту
           var outNode = port.getOutputs()[0];
           $.each(outNode.getInputs(), function (i, inNode) {
             if (inNode.getOutput() != null) {
@@ -1712,7 +1833,7 @@ simcir.$ = (function () {
 
   var factories = {};
   var defaultToolbox = [];
-  // функция создает визуальный объект
+  // функция создает визуальный объект в левой панели
   var registerDevice = function (type, factory, deprecated) {
     if (typeof factory == "object") {
       if (typeof factory.layout == "object") {
@@ -1721,6 +1842,7 @@ simcir.$ = (function () {
         factory = createDeviceRefFactory(factory);
       }
     }
+
     factories[type] = factory;
     if (!deprecated) {
       defaultToolbox.push({ type: type });
@@ -1853,10 +1975,10 @@ simcir.$ = (function () {
   var createWorkspace = function (data) {
     data = $.extend(
       {
-        //        width: 400, // размер окна данных по горизонтали
-        //        height: 300, // размер окна данных по вертикали
-        width: window.innerWidth - 100,
-        height: window.innerHeight - 100,
+        width: 400, // размер окна данных по горизонтали
+        height: 300, // размер окна данных по вертикали
+        //width: window.innerWidth,
+        //height: window.innerHeight - 100,
         showToolbox: true,
         editable: true,
         toolbox: defaultToolbox,
@@ -1971,14 +2093,19 @@ simcir.$ = (function () {
       $dev.trigger("deviceAdd");
     };
 
+    // удаление устройства
     var removeDevice = function ($dev) {
+      // вызов события
       $dev.trigger("deviceRemove");
       // before remove, disconnect all
+      // перед удалением объекта отсоедините все устройства
       controller($dev).disconnectAll();
+
       $dev.trigger("dispose");
       updateConnectors();
     };
 
+    // разъединяет соединение
     var disconnect = function ($inNode) {
       var inNode = controller($inNode);
       if (inNode.getOutput() != null) {
@@ -1987,10 +2114,13 @@ simcir.$ = (function () {
       updateConnectors();
     };
 
+    // обновление соединителей
     var updateConnectors = function () {
       $connectorPane.children().remove();
       $devicePane.children(".simcir-device").each(function () {
+        // получаем контроллер(ы)
         var device = controller($(this));
+        //console.log(device);
         $.each(device.getInputs(), function (i, inNode) {
           if (inNode.getOutput() != null) {
             var p1 = offset(inNode.$ui);
@@ -2021,39 +2151,69 @@ simcir.$ = (function () {
     var getData = function () {
       // renumber all id
       var devIdCount = 0;
+      // функция each () работает с collback() вызовом и запускает -> function () для каждого объекта массива
       $devicePane.children(".simcir-device").each(function () {
-        var $dev = $(this);
+        // создаем список устройств -> массив, со всеми функциями в __proto__
+        var $dev = $(this); // $dev = [g.simcir-device]
+        // вызываем controller() и возвращаем все функции объекта
+        // описание объекта и все его атрибуты
+        // цепочка вызовов: controller($dev) -> $.data($ui[0], id) -> getData(elm)[kv] -> getCache(elm).data; -> return cache[cacheId];
         var device = controller($dev);
+        // присваиваем номер devices например: 'dev0' и увеличиваем счетчик
         var devId = "dev" + devIdCount++;
+        // прописываем ID объекту (но мне кажетя он там был)
         device.id = devId;
+        // getInputs() возвращает массив объектов входящих источников (желтый кружочек)
+        // each() проверяет что if (typeof it.splice == "function")
+        // each() работает с collback() и выполняет в цикле код на строчку ниже
         $.each(device.getInputs(), function (i, node) {
+          // эта часть кода вызывается как collback() из $.each ()
           node.id = devId + ".in" + i;
         });
+        // each() работает с collback() и выполняет в цикле код на строчку ниже
         $.each(device.getOutputs(), function (i, node) {
+          // эта часть кода вызывается как collback() из $.each ()
           node.id = devId + ".out" + i;
         });
       });
 
+      // чистые массивы для создания выходного списка объектов для сохранения схемы
       var toolbox = [];
-      var devices = [];
-      var connectors = [];
+      var devices = []; // список устройств на рабочем поле
+      var connectors = []; // массив для создания соединений между devices
+      //
       var clone = function (obj) {
         return JSON.parse(JSON.stringify(obj));
       };
+      // дошел до сюда по отладке !!!!!
+      // для объекта $toolboxDevicePane ищем наследников children() через collback функции each()
       $toolboxDevicePane.children(".simcir-device").each(function () {
         var $dev = $(this);
         var device = controller($dev);
+        // добавляем в массив toolbox[] - все устройства панели инструментов
         toolbox.push(device.deviceDef);
       });
+      // функция each () работает с collback() вызовом и запускает -> function () для каждого объекта массива
       $devicePane.children(".simcir-device").each(function () {
+        // $dev = [g.simcir-device] - массив из одного элемента
         var $dev = $(this);
+        // device = {$ui: Array(1), deviceDef: {…}, headless: false, scope: {…}, doc: null, …}
+        // device становится объектом с дополнительными атрибутами:
+        // deviceDef: {type: 'Table_03'}
+        // id: "dev0"
+        // и всеми локальными функциями этого файла в первом уровне вложенности
         var device = controller($dev);
+        // device.getInputs() венет только входящие устройства (желтые кружочки)
+        // теперь для каждого элемента(желтого кружочка) из за функции each() ...
         $.each(device.getInputs(), function (i, inNode) {
           if (inNode.getOutput() != null) {
+            // ... собираем строку соединений межу объектами, для каждого соединения
             connectors.push({ from: inNode.id, to: inNode.getOutput().id });
           }
         });
+        // var pos = transform($dev) - получаем объект с координатами объекта
         var pos = transform($dev);
+        // clone() ->
         var deviceDef = clone(device.deviceDef);
         deviceDef.id = device.id;
         deviceDef.x = pos.x;
@@ -2115,11 +2275,12 @@ simcir.$ = (function () {
     };
 
     //-------------------------------------------
-    // mouse operations
+    // mouse operations операции с мышью
 
     var dragMoveHandler = null;
     var dragCompleteHandler = null;
 
+    //регулировочное устройство
     var adjustDevice = function ($dev) {
       var pitch = unit / 2;
       var adjust = function (v) {
@@ -2135,36 +2296,82 @@ simcir.$ = (function () {
       transform($dev, adjust(x), adjust(y));
     };
 
+    // начать подключаться к другому объекту
     var beginConnect = function (event, $target) {
       var $srcNode = $target.closest(".simcir-node");
       var off = $workspace.offset();
       var pos = offset($srcNode);
+      // удаляем старое подключение при клике на желтые кружочки (вход)
       if ($srcNode.attr("simcir-node-type") == "in") {
+        // удаляем старое подключение при клике на желтый кружок
         disconnect($srcNode);
       }
+      // обработчик перемещения перетаскиванием
       dragMoveHandler = function (event) {
         var x = event.pageX - off.left;
         var y = event.pageY - off.top;
         $temporaryPane.children().remove();
         $temporaryPane.append(createConnector(pos.x, pos.y, x, y));
       };
+      // обработчик завершения перетаскивания
       dragCompleteHandler = function (event) {
         $temporaryPane.children().remove();
         var $dst = $(event.target);
         if (isActiveNode($dst)) {
+          // если попали в желтый кружочек приемника то идем сюда
+          // получаем объект цели
           var $dstNode = $dst.closest(".simcir-node");
           connect($srcNode, $dstNode);
           updateConnectors();
+
+          // ищем входящее устройства
+          if ($srcNode.attr("simcir-node-type") == "in") {
+            var $Node = $srcNode.parent("svg");
+          } else if ($dstNode.attr("simcir-node-type") == "in") {
+            var $Node = $dstNode.parent("svg");
+          }
+          //////////////////////////////////////////////////////////
+          ////          console.log("Идентификатор объекта: " + $Node.attr("id"));
+          ////$Node.addInput();
+          // var $id = +$Node.attr("id");
+          // var $y = 30;
+
+          // if ($id > 0) {
+          //   var container = document.getElementById($id);
+          //   var svg = document.createElementNS(
+          //     "http://www.w3.org/2000/svg",
+          //     "g"
+          //   );
+          //   svg.setAttribute("simcir-node-type", "in");
+          //   svg.setAttribute("class", "simcir-node");
+          //   svg.setAttribute("class", "simcir-node-type-in");
+          //   svg.setAttribute("transform", `translate(0 ${$y})`);
+          //   svg.setAttribute("simcir-transform-x", "0");
+          //   svg.setAttribute("simcir-transform-y", $y);
+          //   svg.setAttribute("simcir-transform-rotate", "undefined");
+          //   svg.innerHTML = '<circle cx="0" cy="0" r="4">';
+          //   console.log(svg);
+          //   console.log($y);
+          //   container.appendChild(svg);
+          // }
         }
       };
     };
 
+    // создаем новое устройство
+    // вызов из функции mouseDownHandler()
     var beginNewDevice = function (event, $target) {
       var $dev = $target.closest(".simcir-device");
       var pos = offset($dev);
+      // создаем устройство
       $dev = createDevice(controller($dev).deviceDef, false, scope);
+
+      // устанавливаем его в начальные координаты
       transform($dev, pos.x, pos.y);
+
+      // добавляем к SVG элементу этот объект
       $temporaryPane.append($dev);
+
       var dragPoint = {
         x: event.pageX - pos.x,
         y: event.pageY - pos.y,
@@ -2198,6 +2405,8 @@ simcir.$ = (function () {
       $selectedDevices = [];
     };
 
+    // Начинаем движение устройства в рабочей области
+    // вызов из функции mouseDownHandler()
     var beginMoveDevice = function (event, $target) {
       var $dev = $target.closest(".simcir-device");
       var pos = transform($dev);
@@ -2212,8 +2421,9 @@ simcir.$ = (function () {
         x: event.pageX - pos.x,
         y: event.pageY - pos.y,
       };
+      // обработчик перемещения перетаскиванием
       dragMoveHandler = function (event) {
-        // disable events while dragging.
+        // disable events while dragging. отключение событий при перетаскивании.
         enableEvents($dev, false);
         var curPos = transform($dev);
         var deltaPos = {
@@ -2226,6 +2436,7 @@ simcir.$ = (function () {
         });
         updateConnectors();
       };
+
       dragCompleteHandler = function (event) {
         var $target = $(event.target);
         enableEvents($dev, true);
@@ -2234,12 +2445,15 @@ simcir.$ = (function () {
             adjustDevice($dev);
             updateConnectors();
           } else {
+            // удаление устройства
             removeDevice($dev);
           }
         });
       };
     };
 
+    // выделяет объект, при клике по нему мышкой
+    // функция вызывается из mouseDownHandler ()
     var beginSelectDevice = function (event, $target) {
       var intersect = function (rect1, rect2) {
         return !(
@@ -2295,6 +2509,7 @@ simcir.$ = (function () {
       if (!data.editable) {
         return;
       }
+
       if (isActiveNode($target)) {
         beginConnect(event, $target);
       } else if ($target.closest(".simcir-device").length == 1) {
@@ -2309,11 +2524,13 @@ simcir.$ = (function () {
       $(document).on("mousemove", mouseMoveHandler);
       $(document).on("mouseup", mouseUpHandler);
     };
+
     var mouseMoveHandler = function (event) {
       if (dragMoveHandler != null) {
         dragMoveHandler(event);
       }
     };
+
     var mouseUpHandler = function (event) {
       if (dragCompleteHandler != null) {
         dragCompleteHandler(event);
@@ -2327,6 +2544,7 @@ simcir.$ = (function () {
       $(document).off("mousemove", mouseMoveHandler);
       $(document).off("mouseup", mouseUpHandler);
     };
+
     $workspace.on("mousedown", mouseDownHandler);
 
     //-------------------------------------------
@@ -2347,13 +2565,18 @@ simcir.$ = (function () {
   };
 
   var clearSimcir = function ($placeHolder) {
+    // функция $ получает массив из одного элемента[]= div#mySimcir
     $placeHolder = $($placeHolder[0]);
+    // функция создает [[Prototype]]: Object - копии всех функций -> fn класс этого скрипта
     $placeHolder.find(".simcir-workspace").trigger("dispose");
     $placeHolder.children().remove();
     return $placeHolder;
   };
 
+  // функция вызывается при клике по кнопке ^set data^ из файла get_and_set.html
+  // строка вызова $s.setupSimcir($simcir, JSON.parse(data));
   var setupSimcir = function ($placeHolder, data) {
+    // функция $placeHolder() чуть выше
     $placeHolder = clearSimcir($placeHolder);
 
     var $workspace = simcir.createWorkspace(data);
@@ -2525,23 +2748,29 @@ simcir.$ = (function () {
 
   var connectNode = function (in1, out1) {
     // set input value to output without inputValueChange event.
-    // установите входное значение на вывод без входного ValueChangeEvent.
+    // устанавливает значение на выход без события "inputValueChange",
+    // так как в белом кружочке есть событие "inputValueChange", а здесь нет.
+    // разрешает работать с желтым кружочком на объекте (+ одно входящее соединение)
     var in1_super_setValue = in1.setValue;
+
     in1.setValue = function (value, force) {
       var changed = in1.getValue() !== value;
+
       in1_super_setValue(value, force);
       if (changed || force) {
         out1.setValue(in1.getValue());
       }
     };
   };
+
   //  Создать порт фактуру
   var createPortFactory = function (type) {
     // возвращает функцию
     return function (device) {
-      var in1 = device.addInput();
-      var out1 = device.addOutput();
-      connectNode(in1, out1);
+      var in1 = device.addInput(); // входящие желтые
+      var out1 = device.addOutput(); // исходящие белые
+      connectNode(in1, out1); // Соединительный узел
+
       var super_createUI = device.createUI;
       device.createUI = function () {
         super_createUI();
@@ -2564,7 +2793,45 @@ simcir.$ = (function () {
     };
   };
 
-  var createJointModel = function () {};
+  // функция взята из createPortFactory
+  var createJointTable = function (type) {
+    // возвращает функцию
+    return function (device) {
+      var out1 = device.addOutput(); // исходящие белые
+      var numberIncomingConnectors = +type.slice(-2);
+
+      if (typeof numberIncomingConnectors == "number") {
+        for (var num = 1; num <= numberIncomingConnectors; num++) {
+          var in1 = device.addInput(); // входящие желтые
+          connectNode(in1, out1); // создаем соединительный узел
+        }
+      } else {
+        var in1 = device.addInput(); // входящие желтые
+        connectNode(in1, out1); // создаем соединительный узел
+      }
+
+      var super_createUI = device.createUI;
+      device.createUI = function () {
+        super_createUI();
+        var size = device.getSize();
+        var cx = size.width / 2;
+        var cy = size.height / 2;
+        device.$ui.append(
+          $s
+            .createSVGElement("circle")
+            .attr({ cx: cx, cy: cy, r: unit / 2 })
+            .attr("class", "simcir-port simcir-node-type-" + type)
+        );
+        device.$ui.append(
+          $s
+            .createSVGElement("circle")
+            .attr({ cx: cx, cy: cy, r: unit / 4 })
+            .attr("class", "simcir-port-hole")
+        );
+      };
+    };
+  };
+
   var createJointFactory = function () {
     var maxFadeCount = 16; // максимальное количество затуханий
     var fadeTimeout = 100; // Время затухания
@@ -2572,10 +2839,11 @@ simcir.$ = (function () {
     var Direction = { WE: 0, NS: 1, EW: 2, SN: 3 }; // Направление
 
     return function (device) {
-      var in1 = device.addInput();
-      var out1 = device.addOutput();
-      connectNode(in1, out1);
+      var in1 = device.addInput(); // входящие желтые
+      var out1 = device.addOutput(); // исходящие белые
+      connectNode(in1, out1); // создаем соединительный узел
 
+      //
       var state = device.deviceDef.state || { direction: Direction.WE };
       device.getState = function () {
         return state;
@@ -2665,6 +2933,7 @@ simcir.$ = (function () {
         updateUI();
 
         // fadeout a body.
+        // исчезает тело.
         var fadeCount = 0;
         var setOpacity = function (opacity) {
           device.$ui
@@ -2749,7 +3018,11 @@ simcir.$ = (function () {
   };
 
   // register built-in devices
-  $s.registerDevice("In", createPortFactory("in"));
-  $s.registerDevice("Out", createPortFactory("out"));
-  //  $s.registerDevice("Joint", createJointFactory());
+  //$s.registerDevice("TABLE", createPortFactory("in"));
+  //$s.registerDevice("Out", createPortFactory("out"));
+  $s.registerDevice("Joint", createJointFactory());
+  for (var num = 1; num <= 5; num++) {
+    var pole = "Table_" + (num < 10 ? "0" + num : num);
+    $s.registerDevice(pole, createJointTable(pole));
+  }
 })(simcir);
